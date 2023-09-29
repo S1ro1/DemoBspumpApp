@@ -11,4 +11,4 @@ class DemoApp(bspump.BSPumpApplication):
         svc = self.get_service("bspump.PumpService")
         svc.add_connection(bspump.kafka.KafkaConnection(self, "KafkaConnection"))
 
-        svc.add_pipeline(DemoPipeline(self, "SamplePipeline"))
+        svc.add_pipeline(DemoPipeline(self, "DemoPipeline"))

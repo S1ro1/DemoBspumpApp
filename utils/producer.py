@@ -84,8 +84,7 @@ class PeriodicSource:
 
         self.mapping = _setup_itemids(ids_per_metric)
 
-    def _generate_data(self) -> list[dict]:
-        samples = []
+    def _generate_data(self):
         for host, metrics in self.mapping.items():
             for metric_name, metric_ids in metrics.items():
                 for id_data in metric_ids:
@@ -98,18 +97,21 @@ class PeriodicSource:
                         "device": id_data.id,
                         "value": value,
                     }
-                    samples.append(event)
-
-        return samples
+                    yield event
 
     async def produce(self):
         while True:
-            sample_events = self._generate_data()
-            self.producer.send(self.topic, {"name": "new", "timestamp": int(time.time() * 1000)})
+            start = time.time()
+            for event in self._generate_data():
+                self.producer.send(self.topic, event)
+
+            self.producer.flush()
+            end = time.time()
+            print("Took {} seconds to produce".format(end - start))
             await asyncio.sleep(self.interval)
 
 
 if __name__ == "__main__":
-    src = PeriodicSource("localhost:9093", "sample_input_topic", 30, ids_per_metric=3)
+    src = PeriodicSource("localhost:9093", "src-topic", 60, ids_per_metric=20)
 
     asyncio.run(src.produce())
