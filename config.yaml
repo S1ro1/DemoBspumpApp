@@ -1,0 +1,31 @@
+free disk space:
+  - !threshold
+    threshold: 5
+    alarm_name: "Free_disk_space_sub_5"
+    op: "<"
+
+processor percent load (1 min average):
+  - !kde
+    window_size: 1440
+    alarm_name: "CPU_load_24h"
+  - !threshold
+    threshold: 99
+    alarm_name: "CPU_load_above_99"
+    op: ">"
+  
+incoming network traffic:
+  - !kde
+    window_size: 30
+    alarm_name: "Incoming_network_traffic_30m"
+
+outgoing network traffic:
+  - !kde
+    window_size: 30
+    alarm_name: "Outgoing_network_traffic_30m"
+  
+free ram:
+  - !threshold
+    threshold: 1073741824
+    alarm_name: "Free_ram_sub_1GB"
+    op: "<"
+

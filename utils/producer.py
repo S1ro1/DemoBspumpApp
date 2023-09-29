@@ -92,7 +92,7 @@ class PeriodicSource:
                     event = {
                         "timestamp": int(time.time() * 1000),
                         "host": host,
-                        "metric_name": metric_name,
+                        "metric": metric_name,
                         "itemid": id_data.id,
                         "device": id_data.id,
                         "value": value,
