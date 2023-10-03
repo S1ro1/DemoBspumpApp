@@ -61,8 +61,21 @@ def _setup_itemids(n: int) -> dict:
             for metric in METRICS:
                 for _ in range(n):
                     id = str(random.randint(10**7, 10**8 - 1))
-                    mu = random.uniform(0, 100)
-                    sigma = random.uniform(1, 10)
+                    match metric:
+                        case "free disk space" | "processor percent load (1 min average)":
+                            mu_range = (0, 100)
+                            sigma_range = (0, 10)
+                        case "incoming network traffic" | "outgoing network traffic":
+                            mu_range = (0, 10 * 10**9)
+                            sigma_range = (1, 0.1 * 10**9)
+                        case "free ram":
+                            mu_range = (0, 128 * 10**9)
+                            sigma_range = (1, 10 * 10**9)
+                        case _:
+                            raise ValueError(f"Unknown metric {metric}")
+                        
+                    mu = random.uniform(*mu_range)
+                    sigma = random.uniform(*sigma_range)
 
                     m2ids[metric].append(IdData(id, mu, sigma))
 
@@ -96,6 +109,7 @@ class PeriodicSource:
                         "itemid": id_data.id,
                         "device": id_data.id,
                         "value": value,
+                        "customer": host.split("-")[0],
                     }
                     yield event
 

@@ -1,3 +1,5 @@
+version: '3'
+
 services:
   zookeeper:
     restart: always
@@ -8,6 +10,7 @@ services:
       - "zookeeper-volume:/bitnami"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+
   kafka:
     restart: always
     image: docker.io/bitnami/kafka:latest
@@ -26,6 +29,56 @@ services:
       - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
     depends_on:
       - zookeeper
+  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.15.0
+    environment:
+      - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - "elasticsearch-data:/usr/share/elasticsearch/data"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.15.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+  kafka-connect:
+    image: custom-kafka-connect
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./wait-for-it.sh:/wait-for-it.sh
+    command: ["sh", "-c", "/wait-for-it.sh kafka:9092 --timeout=30 && sleep 10 && /etc/confluent/docker/run"]
+
+
+    environment:
+      - CONNECT_BOOTSTRAP_SERVERS=kafka:9092
+      - CONNECT_REST_PORT=8083
+      - CONNECT_GROUP_ID=kafka-connect-group
+      - CONNECT_CONFIG_STORAGE_TOPIC=kafka-connect-configs
+      - CONNECT_OFFSET_STORAGE_TOPIC=kafka-connect-offsets
+      - CONNECT_STATUS_STORAGE_TOPIC=kafka-connect-status
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
+      - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+    depends_on:
+      - kafka
+
+
 volumes:
   kafka-volume:
   zookeeper-volume:
+  elasticsearch-data:
